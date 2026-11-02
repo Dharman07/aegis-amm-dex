@@ -78,5 +78,32 @@ contract AMMMathTest is Test {
         harness.getAmountOut(type(uint256).max, 1, 2);
     }
 
+    function testFuzzSwapOutputAndInvariant(
+        uint256 amountIn,
+        uint256 reserveIn,
+        uint256 reserveOut) public view {
+            reserveIn = bound(reserveIn, 1, 1e18);
+            reserveOut = bound(reserveOut, 3, 1e18);
+        
+            amountIn = bound(amountIn, reserveIn, 1e18);
+
+            uint256 amountOut = harness.getAmountOut(
+                amountIn,
+                reserveIn,
+                reserveOut
+            );
+
+            assertGt(amountOut, 0);
+            assertLt(amountOut, reserveOut);
+
+            uint256 balanceInAfter = reserveIn + amountIn;
+            uint256 balanceOutAfter = reserveOut - amountOut;
+
+            assertGe(
+                balanceInAfter * balanceOutAfter,
+                reserveIn * reserveOut
+            );
+
+    }
 }
 
