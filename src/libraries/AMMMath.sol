@@ -9,12 +9,11 @@ library AMMMath {
     error InsufficientLiquidity();
     error InsufficientOutputAmount();
 
-    function getAmountOut(
-        uint256 amountIn,
-        uint256 reserveIn,
-        uint256 reserveOut
-    ) internal pure returns(uint256 amountOut) {
-
+    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
+        internal
+        pure
+        returns (uint256 amountOut)
+    {
         if (amountIn == 0) {
             revert ZeroAmount();
         }
@@ -28,9 +27,9 @@ library AMMMath {
         uint256 numerator = amountInWithFee * reserveOut;
 
         uint256 denominator = (reserveIn * FEE_DENOMINATOR) + amountInWithFee;
-    
+
         amountOut = numerator / denominator;
-    
+
         if (amountOut == 0) {
             revert InsufficientOutputAmount();
         }
@@ -38,6 +37,5 @@ library AMMMath {
         if (amountOut >= reserveOut) {
             revert InsufficientLiquidity();
         }
-
     }
 }
