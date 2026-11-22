@@ -40,7 +40,7 @@ contract TWAPOracleTest is Test {
         emergencyControl = new EmergencyControl(address(this));
         factory = new AMMFactory(address(emergencyControl));
 
-        ammOracle = new AMMOracle(address(this), address(this));
+        ammOracle = new AMMOracle(address(this), address(this), address(factory));
 
         twapOracle = new TWAPOracle(address(ammOracle), MINIMUM_PERIOD);
 

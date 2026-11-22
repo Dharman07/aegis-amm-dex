@@ -40,7 +40,7 @@ contract AMMOracleTest is Test {
         emergencyControl = new EmergencyControl(address(this));
         factory = new AMMFactory(address(emergencyControl));
 
-        oracle = new AMMOracle(admin, updater);
+        oracle = new AMMOracle(admin, updater, address(factory));
 
         tokenA = new OracleTestToken("Token A", "TKA");
         tokenB = new OracleTestToken("Token B", "TKB");
@@ -59,9 +59,7 @@ contract AMMOracleTest is Test {
         pair.addLiquidity(INITIAL_AMOUNT, INITIAL_AMOUNT, INITIAL_AMOUNT, INITIAL_AMOUNT, address(this));
     }
 
-    // ---------------------------------------------------------
-    // Constructor tests
-    // ---------------------------------------------------------
+
 
     function testConstructorAssignsAdminRole() public view {
         assertTrue(oracle.hasRole(oracle.DEFAULT_ADMIN_ROLE(), admin));
@@ -74,13 +72,13 @@ contract AMMOracleTest is Test {
     function testConstructorRevertsForZeroAdmin() public {
         vm.expectRevert(AMMOracle.ZeroAddress.selector);
 
-        new AMMOracle(address(0), updater);
+        new AMMOracle(address(0), updater, address(factory));
     }
 
     function testConstructorRevertsForZeroUpdater() public {
         vm.expectRevert(AMMOracle.ZeroAddress.selector);
 
-        new AMMOracle(admin, address(0));
+        new AMMOracle(admin, address(0), address(factory));
     }
 
     function testUnauthorizedUpdaterCannotUpdate() public {
@@ -206,5 +204,19 @@ contract AMMOracleTest is Test {
         vm.expectRevert(AMMOracle.ObservationNotFound.selector);
 
         oracle.getLatestObservation(address(pair));
+    }
+
+    function testConstructorRevertsForZeroFactory() public {
+
+        vm.expectRevert(AMMOracle.ZeroAddress.selector);
+
+        new AMMOracle(admin, updater, address(0));
+    }
+
+    function testConstructorRevertsForInvalidFactory() public {
+
+        vm.expectRevert(AMMOracle.InvalidFactory.selector);
+
+        new AMMOracle(admin, updater, address(0xBEEF));
     }
 }

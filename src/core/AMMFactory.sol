@@ -2,14 +2,16 @@ pragma solidity ^0.8.30;
 
 import {AMMPair} from "./AMMPair.sol";
 import {IEmergencyControl} from "../interfaces/IEmergencyControl.sol";
+import {IAMMFeeManager} from "../interfaces/IAMMFeeManager.sol";
 
-contract AMMFactory {
+contract AMMFactory is IAMMFeeManager {
+
     mapping(address => mapping(address => address)) public getPair;
 
     address[] public allPairs;
 
-    address public feeTo;
-    address public feeToSetter;
+    address public override feeTo;
+    address public override feeToSetter;
     IEmergencyControl public immutable emergencyControl;
 
     error ZeroAddress();
@@ -21,9 +23,9 @@ contract AMMFactory {
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256 pairCount);
 
-    event FeeToUpdated(address indexed previousFeeTo, address indexed newFeeTo);
+    // event FeeToUpdated(address indexed previousFeeTo, address indexed newFeeTo);
 
-    event FeeToSetterUpdated(address indexed previousSetter, address indexed newSetter);
+    // event FeeToSetterUpdated(address indexed previousSetter, address indexed newSetter);
 
     constructor(address emergencyControl_) {
         if (emergencyControl_ == address(0) || emergencyControl_.code.length == 0) {
@@ -72,7 +74,7 @@ contract AMMFactory {
         emit PairCreated(token0, token1, pair, allPairs.length);
     }
 
-    function setFeeTo(address newFeeTo) external onlyFeeToSetter {
+    function setFeeTo(address newFeeTo) external override onlyFeeToSetter {
         address previousFeeTo = feeTo;
 
         feeTo = newFeeTo;
@@ -80,7 +82,7 @@ contract AMMFactory {
         emit FeeToUpdated(previousFeeTo, newFeeTo);
     }
 
-    function setFeeToSetter(address newFeeToSetter) external onlyFeeToSetter {
+    function setFeeToSetter(address newFeeToSetter) external override onlyFeeToSetter {
         if (newFeeToSetter == address(0)) {
             revert ZeroAddress();
         }

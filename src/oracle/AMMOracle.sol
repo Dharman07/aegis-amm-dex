@@ -5,11 +5,14 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 import {IAMMOracle} from "../interfaces/IAMMOracle.sol";
 import {IAMMPair} from "../interfaces/IAMMPair.sol";
+import {IAMMFactory} from "../interfaces/IAMMFactory.sol";
 
 contract AMMOracle is IAMMOracle, AccessControl {
     bytes32 public constant UPDATER_ROLE = keccak256("UPDATER_ROLE");
 
     uint256 private constant Q112 = 2 ** 112;
+
+    IAMMFactory public immutable factory;
 
     mapping(address pair => Observation) private observations;
 
@@ -19,11 +22,18 @@ contract AMMOracle is IAMMOracle, AccessControl {
     error InvalidPair();
     error InsufficientLiquidity();
     error ObservationNotFound();
+    error InvalidFactory();
 
-    constructor(address admin, address updater) {
-        if (admin == address(0) || updater == address(0)) {
+    constructor(address admin, address updater, address factory_) {
+        if (admin == address(0) || updater == address(0) || factory_ == address(0)) {
             revert ZeroAddress();
         }
+
+        if (factory_.code.length == 0) {
+            revert InvalidFactory();
+        }
+
+        factory = IAMMFactory(factory_);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(UPDATER_ROLE, updater);

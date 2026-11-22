@@ -2,17 +2,15 @@
 pragma solidity ^0.8.30;
 
 interface IAMMFactory {
-    // Events
+
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256 pairCount);
 
     event FeeToUpdated(address indexed previousSetter, address indexed newFeeTo);
 
     event FeeToSetterUpdated(address indexed previousSetter, address indexed newSetter);
 
-    // Pair creation
     function createPair(address tokenA, address tokenB) external returns (address pair);
 
-    // Pair registry
     function getPair(address tokenA, address tokenB) external view returns (address pair);
 
     function allPairs(uint256 index) external view returns (address pair);
@@ -21,7 +19,6 @@ interface IAMMFactory {
 
     function pairCodeHash() external view returns (bytes32);
 
-    // Protocol fee configuration
     function feeTo() external view returns (address);
 
     function feeToSetter() external view returns (address);
