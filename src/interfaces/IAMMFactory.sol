@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-interface IAMMFactory {
+import {IAMMFeeManager} from "./IAMMFeeManager.sol";
+
+interface IAMMFactory is IAMMFeeManager {
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256 pairCount);
 
-    event FeeToUpdated(address indexed previousSetter, address indexed newFeeTo);
+    // event FeeToUpdated(address indexed previousSetter, address indexed newFeeTo);
 
-    event FeeToSetterUpdated(address indexed previousSetter, address indexed newSetter);
+    // event FeeToSetterUpdated(address indexed previousSetter, address indexed newSetter);
 
     function createPair(address tokenA, address tokenB) external returns (address pair);
 
