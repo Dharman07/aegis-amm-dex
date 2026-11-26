@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
-
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMPair} from "../../src/core/AMMPair.sol";
 
@@ -66,7 +66,7 @@ contract FlashSwapTest is Test {
     FlashSwapMockERC20 internal token0;
     FlashSwapMockERC20 internal token1;
     EmergencyControl internal emergencyControl;
-
+    TokenPolicy internal tokenPolicy;
     AMMFactory internal factory;
     AMMPair internal pair;
 
@@ -87,7 +87,14 @@ contract FlashSwapTest is Test {
         token1 = new FlashSwapMockERC20("Token 1", "TK1");
 
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
+
+        tokenPolicy.approveToken(address(token0));
+        tokenPolicy.approveToken(address(token1));
 
         address pairAddress = factory.createPair(address(token0), address(token1));
 

@@ -3,16 +3,16 @@ pragma solidity ^0.8.30;
 import {AMMPair} from "./AMMPair.sol";
 import {IEmergencyControl} from "../interfaces/IEmergencyControl.sol";
 import {IAMMFeeManager} from "../interfaces/IAMMFeeManager.sol";
+import {ITokenPolicy} from "../interfaces/ITokenPolicy.sol";
 
 contract AMMFactory is IAMMFeeManager {
-
     mapping(address => mapping(address => address)) public getPair;
 
     address[] public allPairs;
-
     address public override feeTo;
     address public override feeToSetter;
     IEmergencyControl public immutable emergencyControl;
+    ITokenPolicy public immutable tokenPolicy;
 
     error ZeroAddress();
     error IdenticalTokens();
@@ -20,19 +20,35 @@ contract AMMFactory is IAMMFeeManager {
     error PairAlreadyExists();
     error Unauthorized();
     error InvalidEmergencyControl();
+    error InvalidTokenPolicy();
+    error TokenNotAllowed(address token);
 
-    event PairCreated(address indexed token0, address indexed token1, address pair, uint256 pairCount);
+    event PairCreated(
+        address indexed token0,
+        address indexed token1,
+        address pair,
+        uint256 pairCount
+    );
 
     // event FeeToUpdated(address indexed previousFeeTo, address indexed newFeeTo);
 
     // event FeeToSetterUpdated(address indexed previousSetter, address indexed newSetter);
 
-    constructor(address emergencyControl_) {
-        if (emergencyControl_ == address(0) || emergencyControl_.code.length == 0) {
+    constructor(address emergencyControl_, address tokenPolicy_) {
+        if (
+            emergencyControl_ == address(0) ||
+            emergencyControl_.code.length == 0
+        ) {
             revert InvalidEmergencyControl();
         }
 
+        if (tokenPolicy_ == address(0) || tokenPolicy_.code.length == 0) {
+            revert InvalidTokenPolicy();
+        }
+
         emergencyControl = IEmergencyControl(emergencyControl_);
+        tokenPolicy = ITokenPolicy(tokenPolicy_);
+
         feeToSetter = msg.sender;
     }
 
@@ -43,7 +59,10 @@ contract AMMFactory is IAMMFeeManager {
         _;
     }
 
-    function createPair(address tokenA, address tokenB) external returns (address pair) {
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address pair) {
         if (tokenA == address(0) || tokenB == address(0)) {
             revert ZeroAddress();
         }
@@ -56,7 +75,17 @@ contract AMMFactory is IAMMFeeManager {
             revert InvalidToken();
         }
 
-        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        if (!tokenPolicy.isTokenAllowed(tokenA)) {
+            revert TokenNotAllowed(tokenA);
+        }
+
+        if (!tokenPolicy.isTokenAllowed(tokenB)) {
+            revert TokenNotAllowed(tokenB);
+        }
+
+        (address token0, address token1) = tokenA < tokenB
+            ? (tokenA, tokenB)
+            : (tokenB, tokenA);
 
         if (getPair[token0][token1] != address(0)) {
             revert PairAlreadyExists();
@@ -64,7 +93,9 @@ contract AMMFactory is IAMMFeeManager {
 
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
 
-        pair = address(new AMMPair{salt: salt}(token0, token1, address(emergencyControl)));
+        pair = address(
+            new AMMPair{salt: salt}(token0, token1, address(emergencyControl))
+        );
 
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
@@ -82,7 +113,9 @@ contract AMMFactory is IAMMFeeManager {
         emit FeeToUpdated(previousFeeTo, newFeeTo);
     }
 
-    function setFeeToSetter(address newFeeToSetter) external override onlyFeeToSetter {
+    function setFeeToSetter(
+        address newFeeToSetter
+    ) external override onlyFeeToSetter {
         if (newFeeToSetter == address(0)) {
             revert ZeroAddress();
         }

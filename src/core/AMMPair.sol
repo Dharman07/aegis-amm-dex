@@ -36,8 +36,7 @@ contract AMMPair is ReentrancyGuard {
 
     bytes32 public constant SWAP_OPERATION = keccak256("SWAP");
 
-    bytes32 public constant ADD_LIQUIDITY_OPERATION =
-        keccak256("ADD_LIQUIDITY");
+    bytes32 public constant ADD_LIQUIDITY_OPERATION = keccak256("ADD_LIQUIDITY");
 
     uint32 public blockTimestampLast;
 
@@ -66,20 +65,9 @@ contract AMMPair is ReentrancyGuard {
 
     event Sync(uint256 reserve0, uint256 reserve1);
 
-    event Mint(
-        address indexed sender,
-        uint256 amount0,
-        uint256 amount1,
-        address indexed recipient
-    );
+    event Mint(address indexed sender, uint256 amount0, uint256 amount1, address indexed recipient);
 
-    event Burn(
-        address indexed sender,
-        address indexed recipient,
-        uint256 amount0,
-        uint256 amount1,
-        uint256 liquidity
-    );
+    event Burn(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1, uint256 liquidity);
 
     event Swap(
         address indexed sender,
@@ -92,12 +80,7 @@ contract AMMPair is ReentrancyGuard {
 
     event ProtocolFeeMinter(address indexed recipient, uint256 liquidity);
 
-    event Skim(
-        address indexed sender,
-        address indexed recipient,
-        uint256 amount0,
-        uint256 amount1
-    );
+    event Skim(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1);
 
     constructor(address token0_, address token1_, address emergencyControl_) {
         factory = msg.sender;
@@ -114,10 +97,7 @@ contract AMMPair is ReentrancyGuard {
             revert InvalidToken();
         }
 
-        if (
-            emergencyControl_ == address(0) ||
-            emergencyControl_.code.length == 0
-        ) {
+        if (emergencyControl_ == address(0) || emergencyControl_.code.length == 0) {
             revert ZeroAddress();
         }
 
@@ -135,11 +115,7 @@ contract AMMPair is ReentrancyGuard {
         uint256 amount0Min,
         uint256 amount1Min,
         address recipient
-    )
-        external
-        nonReentrant
-        returns (uint256 amount0, uint256 amount1, uint256 liquidity)
-    {
+    ) external nonReentrant returns (uint256 amount0, uint256 amount1, uint256 liquidity) {
         _checkOperation(ADD_LIQUIDITY_OPERATION);
 
         if (recipient == address(0)) {
@@ -152,10 +128,7 @@ contract AMMPair is ReentrancyGuard {
 
         bool feeOn = _mintFee(reserve0, reserve1);
 
-        (amount0, amount1) = _calculateLiquidityAmounts(
-            amount0Desired,
-            amount1Desired
-        );
+        (amount0, amount1) = _calculateLiquidityAmounts(amount0Desired, amount1Desired);
 
         if (amount0 < amount0Min || amount1 < amount1Min) {
             revert InsufficientAmountReceived();
@@ -203,17 +176,14 @@ contract AMMPair is ReentrancyGuard {
         amount1 = amount1Received;
     }
 
-    function removeLiquidity(
-        uint256 liquidity,
-        uint256 amount0Min,
-        uint256 amount1Min,
-        address recipient
-    ) external nonReentrant returns (uint256 amount0, uint256 amount1) {
+    function removeLiquidity(uint256 liquidity, uint256 amount0Min, uint256 amount1Min, address recipient)
+        external
+        nonReentrant
+        returns (uint256 amount0, uint256 amount1)
+    {
         if (
-            recipient == address(0) ||
-            recipient == address(this) ||
-            recipient == address(token0) ||
-            recipient == address(token1)
+            recipient == address(0) || recipient == address(this) || recipient == address(token0)
+                || recipient == address(token1)
         ) {
             revert InvalidRecipient();
         }
@@ -258,37 +228,25 @@ contract AMMPair is ReentrancyGuard {
         emit Burn(msg.sender, recipient, amount0, amount1, liquidity);
     }
 
-    function swap(
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address recipient
-    ) external nonReentrant {
+    function swap(uint256 amount0Out, uint256 amount1Out, address recipient) external nonReentrant {
         _swap(amount0Out, amount1Out, recipient, bytes(""), msg.sender);
     }
 
-    function swap(
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address recipient,
-        bytes calldata data
-    ) external nonReentrant {
+    function swap(uint256 amount0Out, uint256 amount1Out, address recipient, bytes calldata data)
+        external
+        nonReentrant
+    {
         _swap(amount0Out, amount1Out, recipient, data, msg.sender);
     }
 
-    function _swap(
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address recipient,
-        bytes memory data,
-        address sender
-    ) internal {
+    function _swap(uint256 amount0Out, uint256 amount1Out, address recipient, bytes memory data, address sender)
+        internal
+    {
         _checkOperation(SWAP_OPERATION);
 
         if (
-            recipient == address(0) ||
-            recipient == address(this) ||
-            recipient == address(token0) ||
-            recipient == address(token1)
+            recipient == address(0) || recipient == address(this) || recipient == address(token0)
+                || recipient == address(token1)
         ) {
             revert InvalidRecipient();
         }
@@ -317,12 +275,7 @@ contract AMMPair is ReentrancyGuard {
                 revert InvalidRecipient();
             }
 
-            IFlashSwapCallback(recipient).aegisCall(
-                sender,
-                amount0Out,
-                amount1Out,
-                data
-            );
+            IFlashSwapCallback(recipient).aegisCall(sender, amount0Out, amount1Out, data);
         }
 
         uint256 balance0 = token0.balanceOf(address(this));
@@ -333,51 +286,32 @@ contract AMMPair is ReentrancyGuard {
             revert ReserveOverflow();
         }
 
-        uint256 amount0In = balance0 > reserve0Before - amount0Out
-            ? balance0 - (reserve0Before - amount0Out)
-            : 0;
+        uint256 amount0In = balance0 > reserve0Before - amount0Out ? balance0 - (reserve0Before - amount0Out) : 0;
 
-        uint256 amount1In = balance1 > reserve1Before - amount1Out
-            ? balance1 - (reserve1Before - amount1Out)
-            : 0;
+        uint256 amount1In = balance1 > reserve1Before - amount1Out ? balance1 - (reserve1Before - amount1Out) : 0;
 
         if (amount0In == 0 && amount1In == 0) {
             revert InsufficientInputAmount();
         }
 
-        uint256 balance0Adjusted = balance0 *
-            FEE_DENOMINATOR -
-            amount0In *
-            (FEE_DENOMINATOR - FEE_NUMERATOR);
+        uint256 balance0Adjusted = balance0 * FEE_DENOMINATOR - amount0In * (FEE_DENOMINATOR - FEE_NUMERATOR);
 
-        uint256 balance1Adjusted = balance1 *
-            FEE_DENOMINATOR -
-            amount1In *
-            (FEE_DENOMINATOR - FEE_NUMERATOR);
+        uint256 balance1Adjusted = balance1 * FEE_DENOMINATOR - amount1In * (FEE_DENOMINATOR - FEE_NUMERATOR);
 
-        if (
-            balance0Adjusted * balance1Adjusted <
-            reserve0Before * reserve1Before * FEE_DENOMINATOR * FEE_DENOMINATOR
-        ) {
+        if (balance0Adjusted * balance1Adjusted < reserve0Before * reserve1Before * FEE_DENOMINATOR * FEE_DENOMINATOR) {
             revert KInvariant();
         }
 
         _updateReserves(balance0, balance1);
 
-        emit Swap(
-            sender,
-            amount0In,
-            amount1In,
-            amount0Out,
-            amount1Out,
-            recipient
-        );
+        emit Swap(sender, amount0In, amount1In, amount0Out, amount1Out, recipient);
     }
 
-    function _calculateLiquidityAmounts(
-        uint256 amount0Desired,
-        uint256 amount1Desired
-    ) internal view returns (uint256 amount0, uint256 amount1) {
+    function _calculateLiquidityAmounts(uint256 amount0Desired, uint256 amount1Desired)
+        internal
+        view
+        returns (uint256 amount0, uint256 amount1)
+    {
         if (reserve0 == 0 && reserve1 == 0) {
             return (amount0Desired, amount1Desired);
         }
@@ -386,29 +320,18 @@ contract AMMPair is ReentrancyGuard {
             revert InsufficientLiquidity();
         }
 
-        uint256 amount1Optimal = Math.mulDiv(
-            amount0Desired,
-            reserve1,
-            reserve0
-        );
+        uint256 amount1Optimal = Math.mulDiv(amount0Desired, reserve1, reserve0);
 
         if (amount1Optimal <= amount1Desired) {
             return (amount0Desired, amount1Optimal);
         }
 
-        uint256 amount0Optimal = Math.mulDiv(
-            amount1Desired,
-            reserve0,
-            reserve1
-        );
+        uint256 amount0Optimal = Math.mulDiv(amount1Desired, reserve0, reserve1);
 
         return (amount0Optimal, amount1Desired);
     }
 
-    function _calculateLiquidityMint(
-        uint256 amount0,
-        uint256 amount1
-    ) internal returns (uint256 liquidity) {
+    function _calculateLiquidityMint(uint256 amount0, uint256 amount1) internal returns (uint256 liquidity) {
         uint256 totalSupply = lpToken.totalSupply();
 
         if (totalSupply == 0) {
@@ -420,10 +343,7 @@ contract AMMPair is ReentrancyGuard {
 
             // Permanently lock minimum liquidity.
 
-            lpToken.mint(
-                address(0x000000000000000000000000000000000000dEaD),
-                MINIMUM_LIQUIDITY
-            );
+            lpToken.mint(address(0x000000000000000000000000000000000000dEaD), MINIMUM_LIQUIDITY);
 
             return initialLiquidity - MINIMUM_LIQUIDITY;
         }
@@ -443,10 +363,7 @@ contract AMMPair is ReentrancyGuard {
         return a < b ? a : b;
     }
 
-    function _mintFee(
-        uint256 reserve0_,
-        uint256 reserve1_
-    ) internal returns (bool feeOn) {
+    function _mintFee(uint256 reserve0_, uint256 reserve1_) internal returns (bool feeOn) {
         address feeRecipient;
 
         try IAMMFactoryFeeConfig(factory).feeTo() returns (address recipient) {
@@ -461,12 +378,8 @@ contract AMMPair is ReentrancyGuard {
 
         if (feeOn) {
             if (_kLast != 0) {
-                uint256 liquidity = FeeLibrary.calculateProtocolFeeLiquidity(
-                    lpToken.totalSupply(),
-                    reserve0_,
-                    reserve1_,
-                    _kLast
-                );
+                uint256 liquidity =
+                    FeeLibrary.calculateProtocolFeeLiquidity(lpToken.totalSupply(), reserve0_, reserve1_, _kLast);
 
                 if (liquidity > 0) {
                     lpToken.mint(feeRecipient, liquidity);
@@ -528,10 +441,8 @@ contract AMMPair is ReentrancyGuard {
 
     function skim(address recipient) external nonReentrant {
         if (
-            recipient == address(0) ||
-            recipient == address(this) ||
-            recipient == address(token0) ||
-            recipient == address(token1)
+            recipient == address(0) || recipient == address(this) || recipient == address(token0)
+                || recipient == address(token1)
         ) {
             revert InvalidRecipient();
         }

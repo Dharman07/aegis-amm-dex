@@ -4,7 +4,7 @@ import {Test} from "forge-std/Test.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
-
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMPair} from "../../src/core/AMMPair.sol";
 import {AMMOracle} from "../../src/oracle/AMMOracle.sol";
@@ -22,7 +22,7 @@ contract AMMOracleTest is Test {
     AMMFactory internal factory;
     AMMOracle internal oracle;
     EmergencyControl internal emergencyControl;
-
+    TokenPolicy internal tokenPolicy;
     OracleTestToken internal tokenA;
     OracleTestToken internal tokenB;
     OracleTestToken internal tokenC;
@@ -38,13 +38,20 @@ contract AMMOracleTest is Test {
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
 
         oracle = new AMMOracle(admin, updater, address(factory));
 
         tokenA = new OracleTestToken("Token A", "TKA");
         tokenB = new OracleTestToken("Token B", "TKB");
         tokenC = new OracleTestToken("Token C", "TKC");
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
+        tokenPolicy.approveToken(address(tokenC));
 
         tokenA.mint(address(this), 5_000 ether);
         tokenB.mint(address(this), 5_000 ether);
@@ -58,8 +65,6 @@ contract AMMOracleTest is Test {
 
         pair.addLiquidity(INITIAL_AMOUNT, INITIAL_AMOUNT, INITIAL_AMOUNT, INITIAL_AMOUNT, address(this));
     }
-
-
 
     function testConstructorAssignsAdminRole() public view {
         assertTrue(oracle.hasRole(oracle.DEFAULT_ADMIN_ROLE(), admin));
@@ -207,14 +212,12 @@ contract AMMOracleTest is Test {
     }
 
     function testConstructorRevertsForZeroFactory() public {
-
         vm.expectRevert(AMMOracle.ZeroAddress.selector);
 
         new AMMOracle(admin, updater, address(0));
     }
 
     function testConstructorRevertsForInvalidFactory() public {
-
         vm.expectRevert(AMMOracle.InvalidFactory.selector);
 
         new AMMOracle(admin, updater, address(0xBEEF));

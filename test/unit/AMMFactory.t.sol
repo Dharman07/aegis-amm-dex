@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
-
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMPair} from "../../src/core/AMMPair.sol";
 
@@ -17,13 +17,20 @@ contract AMMFactoryTest is Test {
     FactoryMockERC20 internal tokenA;
     FactoryMockERC20 internal tokenB;
     EmergencyControl internal emergencyControl;
+    TokenPolicy internal tokenPolicy;
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
 
         tokenA = new FactoryMockERC20("Token A", "TKA");
         tokenB = new FactoryMockERC20("Token B", "TKB");
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
     }
 
     function testCreatePair() public {

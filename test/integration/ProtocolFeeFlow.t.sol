@@ -1,10 +1,9 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
 
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
-
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -25,6 +24,7 @@ contract ProtocolFeeFlowTest is Test {
     AMMFactory internal factory;
     AMMRouter internal router;
     EmergencyControl internal emergencyControl;
+    TokenPolicy internal tokenPolicy;
 
     ProtocolFeeToken internal tokenA;
     ProtocolFeeToken internal tokenB;
@@ -42,12 +42,17 @@ contract ProtocolFeeFlowTest is Test {
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
         router = new AMMRouter(address(factory));
 
         tokenA = new ProtocolFeeToken("Token A", "TKA");
         tokenB = new ProtocolFeeToken("Token B", "TKB");
-
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
         tokenA.mint(alice, 5_000 ether);
         tokenB.mint(alice, 5_000 ether);
 

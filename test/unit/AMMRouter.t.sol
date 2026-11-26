@@ -7,6 +7,7 @@ import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMRouter} from "../../src/periphery/AMMRouter.sol";
 import {AMMPair} from "../../src/core/AMMPair.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 
 contract MockRouterToken is ERC20 {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
@@ -20,7 +21,7 @@ contract AMMRouterTest is Test {
     AMMFactory public factory;
     AMMRouter public router;
     EmergencyControl internal emergencyControl;
-
+    TokenPolicy internal tokenPolicy;
     MockRouterToken public tokenA;
     MockRouterToken public tokenB;
     MockRouterToken public tokenC;
@@ -33,12 +34,20 @@ contract AMMRouterTest is Test {
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
         router = new AMMRouter(address(factory));
 
         tokenA = new MockRouterToken("Token A", "TKA");
         tokenB = new MockRouterToken("Token B", "TKB");
         tokenC = new MockRouterToken("Token C", "TKC");
+
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
+        tokenPolicy.approveToken(address(tokenC));
 
         tokenA.mint(user, INITIAL_AMOUNT);
         tokenB.mint(user, INITIAL_AMOUNT);

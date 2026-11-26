@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
-
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMPair} from "../../src/core/AMMPair.sol";
 import {AMMOracle} from "../../src/oracle/AMMOracle.sol";
@@ -24,7 +24,7 @@ contract TWAPOracleTest is Test {
     AMMOracle internal ammOracle;
     TWAPOracle internal twapOracle;
     EmergencyControl internal emergencyControl;
-
+    TokenPolicy internal tokenPolicy;
     TWAPTestToken internal tokenA;
     TWAPTestToken internal tokenB;
     TWAPTestToken internal tokenC;
@@ -38,7 +38,11 @@ contract TWAPOracleTest is Test {
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
 
         ammOracle = new AMMOracle(address(this), address(this), address(factory));
 
@@ -47,6 +51,9 @@ contract TWAPOracleTest is Test {
         tokenA = new TWAPTestToken("Token A", "TKA");
         tokenB = new TWAPTestToken("Token B", "TKB");
         tokenC = new TWAPTestToken("Token C", "TKC");
+
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
 
         tokenA.mint(address(this), 5_000 ether);
         tokenB.mint(address(this), 5_000 ether);

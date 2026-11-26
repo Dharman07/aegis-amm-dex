@@ -1,16 +1,9 @@
-
 pragma solidity ^0.8.30;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 library FeeLibrary {
-
-    function calculateProtocolFeeLiquidity(
-        uint256 totalSupply,
-        uint256 reserve0,
-        uint256 reserve1,
-        uint256 kLast
-    )
+    function calculateProtocolFeeLiquidity(uint256 totalSupply, uint256 reserve0, uint256 reserve1, uint256 kLast)
         internal
         pure
         returns (uint256 liquidity)
@@ -31,10 +24,6 @@ library FeeLibrary {
 
         uint256 denominator = (rootK * 5) + rootKLast;
 
-        liquidity = Math.mulDiv(
-            totalSupply,
-            numerator,
-            denominator
-        );
+        liquidity = Math.mulDiv(totalSupply, numerator, denominator);
     }
 }

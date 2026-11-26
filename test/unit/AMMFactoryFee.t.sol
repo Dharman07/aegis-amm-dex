@@ -3,20 +3,24 @@ pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 
 contract AMMFactoryFeeTest is Test {
     AMMFactory factory;
     EmergencyControl internal emergencyControl;
-
+    TokenPolicy internal tokenPolicy;
     address admin = address(1);
     address alice = address(2);
     address treasury = address(3);
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-
+        tokenPolicy = new TokenPolicy(address(this));
         vm.prank(admin);
-        factory = new AMMFactory(address(emergencyControl));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
     }
 
     function testInitialFeeConfiguration() public view {

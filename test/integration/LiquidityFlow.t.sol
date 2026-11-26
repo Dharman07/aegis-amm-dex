@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMRouter} from "../../src/periphery/AMMRouter.sol";
@@ -21,6 +22,7 @@ contract LiquidityFlowTest is Test {
     AMMFactory internal factory;
     AMMRouter internal router;
     EmergencyControl internal emergencyControl;
+    TokenPolicy internal tokenPolicy;
 
     LiquidityFlowToken internal tokenA;
     LiquidityFlowToken internal tokenB;
@@ -31,13 +33,20 @@ contract LiquidityFlowTest is Test {
     uint256 internal constant ALICE_DEPOSIT = 1_000 ether;
     uint256 internal constant BOB_DEPOSIT = 500 ether;
 
-    function setUp() public {
+   function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
         router = new AMMRouter(address(factory));
 
         tokenA = new LiquidityFlowToken("Token A", "TKA");
         tokenB = new LiquidityFlowToken("Token B", "TKB");
+
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
 
         tokenA.mint(alice, 5_000 ether);
         tokenB.mint(alice, 5_000 ether);

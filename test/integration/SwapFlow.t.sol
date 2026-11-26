@@ -6,7 +6,7 @@ import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EmergencyControl} from "../../src/security/EmergencyControl.sol";
-
+import {TokenPolicy} from "../../src/security/TokenPolicy.sol";
 import {AMMFactory} from "../../src/core/AMMFactory.sol";
 import {AMMPair} from "../../src/core/AMMPair.sol";
 import {AMMRouter} from "../../src/periphery/AMMRouter.sol";
@@ -23,7 +23,7 @@ contract SwapFlowTest is Test {
     AMMFactory internal factory;
     AMMRouter internal router;
     EmergencyControl internal emergencyControl;
-
+    TokenPolicy internal tokenPolicy;
     SwapFlowToken internal tokenA;
     SwapFlowToken internal tokenB;
     SwapFlowToken internal tokenC;
@@ -36,12 +36,20 @@ contract SwapFlowTest is Test {
 
     function setUp() public {
         emergencyControl = new EmergencyControl(address(this));
-        factory = new AMMFactory(address(emergencyControl));
+        tokenPolicy = new TokenPolicy(address(this));
+        factory = new AMMFactory(
+            address(emergencyControl),
+            address(tokenPolicy)
+        );
         router = new AMMRouter(address(factory));
 
         tokenA = new SwapFlowToken("Token A", "TKA");
         tokenB = new SwapFlowToken("Token B", "TKB");
         tokenC = new SwapFlowToken("Token C", "TKC");
+
+        tokenPolicy.approveToken(address(tokenA));
+        tokenPolicy.approveToken(address(tokenB));
+        tokenPolicy.approveToken(address(tokenC));
 
         tokenA.mint(alice, 10_000 ether);
         tokenB.mint(alice, 10_000 ether);

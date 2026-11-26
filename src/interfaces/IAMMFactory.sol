@@ -4,7 +4,6 @@ pragma solidity ^0.8.30;
 import {IAMMFeeManager} from "./IAMMFeeManager.sol";
 
 interface IAMMFactory is IAMMFeeManager {
-
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256 pairCount);
 
     // event FeeToUpdated(address indexed previousSetter, address indexed newFeeTo);
